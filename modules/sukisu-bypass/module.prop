@@ -1,0 +1,6 @@
+id=miniwatts_bypass
+name=MiniWatts Bypass Control
+version=0.2.0
+versionCode=3
+author=MiniWatts
+description=Manual Xiaomi dada FCC policy or native interface requests with WebUI, watchdog and rollback. Default off; actual hardware bypass remains unverified.

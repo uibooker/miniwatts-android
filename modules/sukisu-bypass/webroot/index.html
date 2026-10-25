@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>MiniWatts 供电控制</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main>
+    <header><span class="eyebrow">MINIWATTS · SUKISU ULTRA</span><h1>供电控制</h1><p>手动请求，清楚知道当前状态。</p></header>
+    <div id="preview" class="notice" hidden>浏览器预览：没有 SukiSU 执行接口，仅展示界面，不能读取或控制手机。</div>
+    <div class="boundary"><strong>真实旁路供电：尚未验证</strong><p>dada 厂商“智能旁路”通过 FCC 限制电池充电电流。驱动请求开启、低充电功率或模块会话存在，都不能证明电池已经退出供电路径。</p></div>
+    <section aria-labelledby="state-title">
+      <div class="section-heading"><h2 id="state-title">当前状态</h2><button id="refresh" type="button">刷新状态</button></div>
+      <p id="summary" class="summary" role="status">尚未读取</p>
+      <dl class="states">
+        <div><dt>配置模式</dt><dd id="mode">未知</dd></div>
+        <div><dt>模块会话</dt><dd id="session">未知</dd></div>
+        <div><dt>驱动请求回显</dt><dd id="request">未知</dd></div>
+        <div><dt>监控进程</dt><dd id="watchdog">未知</dd></div>
+        <div><dt>恢复记录</dt><dd id="recovery">未知</dd></div>
+        <div><dt>节点原始读值</dt><dd id="raw">未知</dd></div>
+      </dl>
+      <p class="meta" id="updated">上次成功读取：暂无</p>
+      <p class="meta">状态是读取时的快照，切回页面或操作前请刷新。监控轮询约每 5 秒一次，休眠期间可能延迟。</p>
+      <p class="meta">安装后监控需要重启或由 root 终端显式运行 service.sh；本页不会请求重启或自动启动监控。</p>
+      <div class="controls"><button id="on" class="primary" type="button" disabled>请求启用</button><button id="off" type="button" disabled>关闭 / 重试恢复</button></div>
+      <p class="meta">只有启用按钮会请求开启。关闭仅处理本模块的会话 / 待恢复记录，不接管其他控制器的开启请求。遇到失败请查看诊断，不能假定已关闭。</p>
+    </section>
+    <section aria-labelledby="profile-title">
+      <div class="section-heading"><h2 id="profile-title">设备配置</h2><button id="probe" type="button">只读探测</button></div>
+      <p id="probe-result" role="status">尚未探测当前设备。</p>
+      <button id="configure" type="button" disabled>明确选用 dada 厂商 FCC 限流策略</button>
+      <p class="meta">探测只读取严格限定的型号、内核与节点。配置只保存配置文件，不写电源节点、不启用。切换配置前须关闭并完成恢复。</p>
+    </section>
+    <section aria-labelledby="limits-title">
+      <h2 id="limits-title">保护阈值</h2>
+      <form id="limits-form">
+        <label for="capacity">最低电量（10–95%）<input id="capacity" type="number" inputmode="numeric" min="10" max="95" step="1" value="30" required></label>
+        <label for="temperature">最高电池温度（300–500，单位 0.1°C）<input id="temperature" type="number" inputmode="numeric" min="300" max="500" step="1" value="450" required></label>
+        <p class="meta">默认至少 30%，低于 45°C。450 表示 45°C。厂商策略另有板温和供电类型检查，以后台结果为准。</p>
+        <button id="save-limits" type="submit" disabled>保存阈值</button>
+      </form>
+      <p class="meta">仅在关闭且无待恢复记录时允许保存。更改阈值不会启用策略。</p>
+    </section>
+    <section aria-labelledby="diagnostic-title">
+      <div class="section-heading"><h2 id="diagnostic-title">诊断与命令结果</h2><button id="diagnose" type="button">读取诊断</button></div>
+      <p class="meta">命令失败、状态未知或恢复失败时，先阅读这里。节点值只代表接口读值。</p>
+      <pre id="output" tabindex="0" aria-live="polite">尚未执行命令。</pre>
+    </section>
+    <footer>默认不启用 · 不自动选择配置 · 不自动重启 · power_path=unverified</footer>
+  </main>
+</body>
+</html>
