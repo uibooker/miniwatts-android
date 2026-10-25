@@ -21,13 +21,16 @@ class UiKit(val context: Context) {
                     it.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
                         Configuration.UI_MODE_NIGHT_YES)
         }
-    val ink = Color.parseColor(if (dark) "#EAF3F5" else "#132D38")
-    val muted = Color.parseColor(if (dark) "#A9BEC7" else "#536A76")
+    val ink = Color.parseColor(if (dark) "#F1F4F7" else "#101114")
+    val muted = Color.parseColor(if (dark) "#AEB7C8" else "#717789")
     val surface = Color.parseColor(if (dark) "#172F39" else "#FFFFFF")
-    val line = Color.parseColor(if (dark) "#304A55" else "#DFE9ED")
-    val blue = Color.parseColor(if (dark) "#68D1EF" else "#087EA1")
-    val green = Color.parseColor(if (dark) "#70DEB4" else "#14815C")
-    val orange = Color.parseColor(if (dark) "#FFC078" else "#A65C09")
+    val line = Color.parseColor(if (dark) "#304A55" else "#ECECEF")
+    val track = Color.parseColor(if (dark) "#36424E" else "#E7E7EC")
+    val selection = Color.parseColor(if (dark) "#344750" else "#DFE2E8")
+    val blue = Color.parseColor(if (dark) "#68D1EF" else "#0089AF")
+    val green = Color.parseColor(if (dark) "#70DEB4" else "#0A9E65")
+    val orange = Color.parseColor(if (dark) "#FFC078" else "#B57108")
+    val red = Color.parseColor(if (dark) "#FF9390" else "#C73930")
     val violet = Color.parseColor(if (dark) "#C4B8EF" else "#6C599C")
 
     fun dp(n: Int) = (n * context.resources.displayMetrics.density).toInt()
@@ -42,8 +45,14 @@ class UiKit(val context: Context) {
     fun tint(color: Int) =
         Color.argb(if (dark) 35 else 20, Color.red(color), Color.green(color), Color.blue(color))
 
-    fun ripple(color: Int = surface, radius: Int = 16) =
-        RippleDrawable(ColorStateList.valueOf(tint(blue)), shape(color, radius), null)
+    fun blendWithSurface(color: Int) = Color.rgb(
+        (Color.red(color) + Color.red(surface)) / 2,
+        (Color.green(color) + Color.green(surface)) / 2,
+        (Color.blue(color) + Color.blue(surface)) / 2,
+    )
+
+    fun ripple(color: Int = surface, radius: Int = 16, stroke: Boolean = true) =
+        RippleDrawable(ColorStateList.valueOf(tint(blue)), shape(color, radius, stroke), null)
 
     fun column() = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
 
@@ -53,6 +62,7 @@ class UiKit(val context: Context) {
             textSize = size
             setTextColor(color)
             typeface = Typeface.create("sans-serif", if (bold) Typeface.BOLD else Typeface.NORMAL)
+            includeFontPadding = false
             setPadding(0, dp(4), 0, dp(4))
         }
 
@@ -71,8 +81,7 @@ class UiKit(val context: Context) {
         val card =
             column().apply {
                 background = shape()
-                elevation = dp(1).toFloat()
-                setPadding(dp(18), dp(16), dp(18), dp(16))
+                setPadding(dp(16), dp(14), dp(16), dp(16))
             }
         parent.addView(card, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
         if (title != null) {
@@ -82,7 +91,7 @@ class UiKit(val context: Context) {
                     IconView(context, icon, color),
                     LinearLayout.LayoutParams(dp(20), dp(20)).apply { marginEnd = dp(8) },
                 )
-            row.addView(label(title, 12f, color, true).apply { letterSpacing = .08f })
+            row.addView(label(title, 13f, color, true))
             card.addView(row)
         }
         return card
@@ -160,6 +169,7 @@ class UiKit(val context: Context) {
             cell.addView(label(title, 12f, muted))
             val value =
                 MetricTextView(context).apply {
+                    maxLines = 1
                     text = "—"
                     textSize = if (titles.size > 2) 28f else 32f
                     setTextColor(colors[i])
@@ -182,14 +192,14 @@ class UiKit(val context: Context) {
         }
     }
 
-    fun iconButton(icon: String, description: String, action: () -> Unit): FrameLayout =
+    fun iconButton(icon: String, description: String, color: Int = blue, action: () -> Unit): FrameLayout =
         FrameLayout(context).apply {
             background = ripple(surface, 24)
             contentDescription = description
             isFocusable = true
             setOnClickListener { action() }
             addView(
-                IconView(context, icon, blue),
+                IconView(context, icon, color),
                 FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER),
             )
         }
@@ -199,6 +209,8 @@ class GridBackground(private val ui: UiKit) : Drawable() {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     override fun draw(canvas: Canvas) {
+        // Grid strokes leave a translucent color on this reused paint.
+        paint.alpha = 255
         paint.shader =
             LinearGradient(
                 0f,
@@ -213,7 +225,7 @@ class GridBackground(private val ui: UiKit) : Drawable() {
         paint.shader = null
         paint.color = if (ui.dark) Color.argb(22, 160, 208, 217) else Color.argb(18, 71, 119, 135)
         paint.strokeWidth = 1f
-        val step = ui.dp(26)
+        val step = ui.dp(27)
         for (x in 0..bounds.width() step step) canvas.drawLine(
             x.toFloat(),
             0f,
@@ -256,7 +268,10 @@ class IconView(context: Context, private val kind: String, var color: Int) : Vie
             c.drawPath(path, p)
         }
         when (kind) {
-            "power" -> path(14f, 2f, 5f, 14f, 11f, 14f, 10f, 22f, 19f, 10f, 13f, 10f, 14f, 2f)
+            "power" -> {
+                p.style = Paint.Style.FILL
+                path(14f, 2f, 5f, 14f, 11f, 14f, 10f, 22f, 19f, 10f, 13f, 10f, 14f, 2f)
+            }
             "thermal" -> {
                 c.drawRoundRect(9f, 2f, 15f, 17f, 3f, 3f, p)
                 c.drawCircle(12f, 18f, 4f, p)
@@ -264,10 +279,24 @@ class IconView(context: Context, private val kind: String, var color: Int) : Vie
                 for (y in 5..13 step 4) c.drawLine(18f, y.toFloat(), 20f, y.toFloat(), p)
             }
             "charger" -> {
-                c.drawLine(9f, 2f, 9f, 7f, p)
-                c.drawLine(15f, 2f, 15f, 7f, p)
-                c.drawRoundRect(6f, 7f, 18f, 15f, 2f, 2f, p)
-                path(12f, 15f, 12f, 19f, 17f, 19f)
+                p.style = Paint.Style.FILL
+                c.drawRoundRect(7f, 6f, 18f, 18f, 4f, 4f, p)
+                c.drawRoundRect(2f, 9f, 9f, 15f, 1f, 1f, p)
+                c.drawRoundRect(17f, 8f, 23f, 10f, 1f, 1f, p)
+                c.drawRoundRect(17f, 14f, 23f, 16f, 1f, 1f, p)
+            }
+            "device" -> {
+                p.style = Paint.Style.FILL
+                path(2f, 7f, 12f, 2f, 22f, 7f, 12f, 12f, 2f, 7f)
+                p.style = Paint.Style.STROKE
+                p.strokeWidth = 2.4f
+                path(2f, 12f, 12f, 17f, 22f, 12f)
+                path(2f, 17f, 12f, 22f, 22f, 17f)
+            }
+            "phone" -> {
+                c.drawRoundRect(6f, 2f, 18f, 22f, 2f, 2f, p)
+                c.drawLine(10f, 5f, 14f, 5f, p)
+                c.drawLine(10f, 19f, 14f, 19f, p)
             }
             "history" -> {
                 path(3f, 3f, 3f, 21f, 22f, 21f)
@@ -318,14 +347,14 @@ class IconView(context: Context, private val kind: String, var color: Int) : Vie
     }
 }
 
-/** Units get their own smaller line, so signed readings fit narrow metric columns. */
+/** Keep the unit beside its reading, with a quieter size as in the reference. */
 private class MetricTextView(context: Context) : TextView(context) {
     override fun setText(text: CharSequence?, type: BufferType?) {
         val value = text?.toString().orEmpty()
         val split = value.lastIndexOf(' ')
         val unit = value.substringAfterLast(' ')
-        if (split > 0 && unit in listOf("W", "Wh", "V", "mA", "°C", "°F", "%")) {
-            val styled = android.text.SpannableString(value.substring(0, split) + "\n" + unit)
+        if (split > 0 && unit in listOf("W", "Wh", "V", "A", "mA", "mAh", "°C", "°F", "%")) {
+            val styled = android.text.SpannableString(value)
             styled.setSpan(
                 android.text.style.RelativeSizeSpan(.5f),
                 split + 1,
